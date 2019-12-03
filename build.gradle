@@ -1,0 +1,31 @@
+plugins {
+  id 'org.springframework.boot' version '2.2.1.RELEASE'
+  id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+  id 'com.palantir.graal' version '0.6.0'
+  id 'java'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+graal {
+  mainClass 'org.springframework.boot.loader.JarLauncher'
+  outputName 'myApp'
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  implementation 'org.springframework.boot:spring-boot-starter'
+  implementation 'info.picocli:picocli-spring-boot-starter:4.0.1'
+  testImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
+}
+
+test {
+  useJUnitPlatform()
+}
