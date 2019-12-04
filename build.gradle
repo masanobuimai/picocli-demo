@@ -12,6 +12,7 @@ sourceCompatibility = '8'
 graal {
   mainClass 'org.springframework.boot.loader.JarLauncher'
   outputName 'myApp'
+  option '--report-unsupported-elements-at-runtime'
 }
 
 repositories {

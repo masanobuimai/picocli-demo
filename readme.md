@@ -97,6 +97,82 @@ C:\temp> myApp.exe
 
 意図的に`./build/libs`のJarファイルを消して，`./build/graal/myApp.exe`を実行してもエラーになった。これか！でもなんで？（`gradlew nativeImage`のときのワーニングのせいかな？）
 
+*追記*
+
+https://twitter.com/RemkoPopma/status/1202047115037249538
+
+上記のアドバイスに従い，`build.gradle`の`graal`ブロックを以下の様に修正。
+
+```
+graal {
+  mainClass 'org.springframework.boot.loader.JarLauncher'
+  outputName 'myApp'
+  option '--report-unsupported-elements-at-runtime'
+}
+```
+
+gradleの`clean build nativeImage`を順次実行。エラーも無くビルドに成功。
+```
+16:21:50: Executing task 'nativeImage'...
+
+> Task :downloadGraalTooling SKIPPED
+> Task :extractGraalTooling SKIPPED
+> Task :compileJava UP-TO-DATE
+> Task :processResources NO-SOURCE
+> Task :classes UP-TO-DATE
+> Task :jar SKIPPED
+
+> Task :nativeImage
+[myApp:15104]    classlist:  12,584.39 ms
+[myApp:15104]        (cap):   7,696.49 ms
+[myApp:15104]        setup:  12,247.52 ms
+[myApp:15104]   (typeflow):  16,658.30 ms
+[myApp:15104]    (objects):  10,204.75 ms
+[myApp:15104]   (features):   1,298.67 ms
+[myApp:15104]     analysis:  28,632.58 ms
+[myApp:15104]     (clinit):     794.72 ms
+[myApp:15104]     universe:   2,055.90 ms
+[myApp:15104]      (parse):   3,879.33 ms
+[myApp:15104]     (inline):   6,455.75 ms
+[myApp:15104]    (compile):  26,991.40 ms
+[myApp:15104]      compile:  39,304.24 ms
+[myApp:15104]        image:   2,550.87 ms
+[myApp:15104]        write:     839.07 ms
+[myApp:15104]      [total]:  98,983.53 ms
+native image available at build\graal\myApp.exe (9 MB)
+
+BUILD SUCCESSFUL in 1m 46s
+2 actionable tasks: 1 executed, 1 up-to-date
+16:23:37: Task execution finished 'nativeImage'.
+```
+
+だけど `./build/graal/myApp.exe`を実行するとエラーになった。ままならない（これはSpring Boot側の問題っぽいな）
+```
+C:\picocli-demo\build\graal>myApp.exe
+Exception in thread "main" java.lang.IllegalStateException: java.util.zip.ZipException: zip END header not found
+        at org.springframework.boot.loader.ExecutableArchiveLauncher.<init>(ExecutableArchiveLauncher.java:42)
+        at org.springframework.boot.loader.JarLauncher.<init>(JarLauncher.java:36)
+        at org.springframework.boot.loader.JarLauncher.main(JarLauncher.java:52)
+Caused by: java.util.zip.ZipException: zip END header not found
+        at com.oracle.svm.core.jdk8.zipfile.ZipFile$Source.zerror(ZipFile.java:1317)
+        at com.oracle.svm.core.jdk8.zipfile.ZipFile$Source.findEND(ZipFile.java:1218)
+        at com.oracle.svm.core.jdk8.zipfile.ZipFile$Source.initCEN(ZipFile.java:1225)
+        at com.oracle.svm.core.jdk8.zipfile.ZipFile$Source.<init>(ZipFile.java:1062)
+        at com.oracle.svm.core.jdk8.zipfile.ZipFile$Source.get(ZipFile.java:1022)
+        at java.util.zip.ZipFile.<init>(ZipFile.java:261)
+        at java.util.zip.ZipFile.<init>(ZipFile.java:191)
+        at java.util.jar.JarFile.<init>(JarFile.java:166)
+        at java.util.jar.JarFile.<init>(JarFile.java:130)
+        at org.springframework.boot.loader.jar.JarFile.<init>(JarFile.java:119)
+        at org.springframework.boot.loader.jar.JarFile.<init>(JarFile.java:114)
+        at org.springframework.boot.loader.jar.JarFile.<init>(JarFile.java:100)
+        at org.springframework.boot.loader.jar.JarFile.<init>(JarFile.java:91)
+        at org.springframework.boot.loader.archive.JarFileArchive.<init>(JarFileArchive.java:61)
+        at org.springframework.boot.loader.archive.JarFileArchive.<init>(JarFileArchive.java:57)
+        at org.springframework.boot.loader.Launcher.createArchive(Launcher.java:127)
+        at org.springframework.boot.loader.ExecutableArchiveLauncher.<init>(ExecutableArchiveLauncher.java:39)
+        ... 2 more
+```
 
 ### ちなみに...
 `gradlew clean` → `gradlew nativeImage` すると，こんなエラーになる。jarタスクがなんでかスキップされてて，jarファイルがないので当たり前といえば当たり前（なんでスキップするの？）
